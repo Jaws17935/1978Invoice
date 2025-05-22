@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INVOICE</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #fff;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, 'Microsoft JhengHei', sans-serif;
+            color: #222;
+        }
+        .table-container {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+        }
+        .title {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            padding: 32px 0 24px 0;
+        }
+        .main-table {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+            border: 2px solid #222;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .info-table td, .main-table th, .main-table td {
+            border: 1px solid #222;
+            box-sizing: border-box;
+            padding: 4px 8px;
+            font-size: 1em;
+            vertical-align: middle;
+        }
+        .info-header {
+            text-align: left;
+            font-weight: bold;
+            background: #f8f8f8;
+        }
+        .info-row {
+            background: #fff;
+        }
+        .th-zh {
+            font-size: 0.95em;
+            font-weight: bold;
+            display: block;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        .total-row td {
+            font-weight: bold;
+            background: #fff;
+            color: #222;
+            border-top: 2px solid #222;
+        }
+        .total-row td:first-child {
+            text-align: left;
+        }
+        @media print {
+            .title {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            table, th, td {
+                padding: 1px 2px !important;
+                line-height: 1 !important;
+            }
+            body, table, th, td {
+                font-size: 9pt !important;
+            }
+        }
+        .info-input {
+            width: 80%;
+            border: none !important;
+            outline: none;
+            font-size: 1em;
+            font-family: inherit;
+            background: transparent;
+            text-align: left;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .info-input:focus {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        .tax-id-input {
+            width: 100px !important;
+            min-width: 100px !important;
+            max-width: 100px !important;
+        }
+        .total-input {
+            min-width: 80px;
+            width: auto;
+            display: inline-block;
+        }
+        .center-input {
+            text-align: center;
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+        .excel-button {
+            padding: 8px 16px;
+            margin: 0 4px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1em;
+            color: #222;
+            transition: background-color 0.2s;
+        }
+        .excel-button:hover {
+            background: #e0e0e0;
+        }
+        .excel-button:active {
+            background: #d0d0d0;
+        }
+        @media print {
+            .excel-button {
+                display: none !important;
+            }
+            .info-input {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">INVOICE</div>
+    <div class="table-container">
+        <table class="main-table">
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table class="info-table" style="width:100%;table-layout:fixed;">
+                        <tr>
+                            <td class="info-header" style="width:50%;"><strong>出貨方</strong></td>
+                            <td class="info-header" style="width:50%;"><strong>收件方</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司名稱：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">申報人：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司位址：<input type="text" class="info-input"></td>
+                            <td class="info-row">申報位址：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司電話：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">聯絡電話：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司聯絡人：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">申報人姓名：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row"></td>
+                            <td class="info-row">統編 & 證號：<input type="text" class="info-input tax-id-input" value=""></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table class="info-table" style="width:100%;table-layout:fixed;">
+                        <tr>
+                            <td class="info-row" style="white-space:nowrap; width:150px;">貿易條件：<input type="text" class="info-input" style="width:90px;" value=""></td>
+                            <td class="info-row" style="white-space:nowrap; width:150px;">交易幣別：<input type="text" class="info-input" style="width:90px;" value=""></td>
+                            <td class="info-row" style="white-space:nowrap; width:150px;">運費：<input type="text" class="info-input" style="width:90px;"></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <tr>
+                            <th style="width:40px; text-align:center;">ITEM<br><span class="th-zh">(項次)</span></th>
+                            <th style="width:120px; text-align:center;">DESCRIPTION<br><span class="th-zh">(品名)</span></th>
+                            <th style="width:80px; text-align:center;">SPE<br><span class="th-zh">(規格)</span></th>
+                            <th style="width:80px; text-align:center;">MODEL<br><span class="th-zh">(型號)</span></th>
+                            <th style="width:120px; text-align:center;">Material<br><span class="th-zh">(材質)</span></th>
+                            <th style="width:60px; text-align:center;">Q'TY(PCS)<br><span class="th-zh">(數量.單位)</span></th>
+                            <th style="width:60px; text-align:center;">Unit Price<br><span class="th-zh">(單價)</span></th>
+                            <th style="width:80px; text-align:center;">Total Amount<br><span class="th-zh">(項次金額)</span></th>
+                        </tr>
+                        <tr>
+                            <td style="text-align:center;">1</td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input price-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align:center;">2</td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input price-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align:left;white-space:nowrap;">品牌：<input type="text" class="info-input" value=""></td>
+                            <td colspan="2" style="text-align:left;white-space:nowrap;">總數量(PCE)：<input type="text" class="info-input total-input" value=""></td>
+                            <td colspan="3" style="text-align:left;white-space:nowrap;">TOTAL(總金額)：<input type="text" class="info-input total-input" id="totalAmountInput" readonly></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table style="width:100%;border-collapse:collapse;margin-top:0;border:none;">
+                        <tr>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;vertical-align:top;white-space:nowrap;">
+                                產地：<input type="text" class="info-input" value="">
+                            </td>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;vertical-align:top;white-space:nowrap;">
+                                分提單號碼：<input type="text" class="info-input">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;"></td>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;white-space:nowrap;height:48px;min-height:48px;">
+                                <span style="font-weight:bold;">簽名：</span>
+                                <input type="text" class="info-input">
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="button-container" style="width:100%;max-width:297mm;margin:20px auto;text-align:center;">
+        <button class="excel-button" onclick="importExcel()">資料導入</button>
+        <button id="rowCountBtn" class="excel-button" style="margin:0 8px;" onclick="showRowCountInput()">項次數量：2</button>
+        <input id="rowCountInput" type="number" min="1" style="width:100px !important;display:none;margin:0 8px;vertical-align:middle;text-align:center;" placeholder="項次數量" onblur="hideRowCountInput()" onkeydown="if(event.key==='Enter'){hideRowCountInput();}">
+        <button class="excel-button" onclick="exportExcel()">資料導出</button>
+    </div>
+</body>
+<script>
+// 全域變數
+const CONFIG = {
+    DECIMAL_PLACES: 2,
+    DEFAULT_ROW_COUNT: 2
+};
+
+// 工具函數
+const utils = {
+    parseNumber: (value) => {
+        const num = parseFloat(value);
+        return isNaN(num) ? 0 : num;
+    },
+    
+    formatNumber: (value, decimals = CONFIG.DECIMAL_PLACES) => {
+        return value ? value.toFixed(decimals) : '';
+    },
+    
+    getElement: (selector) => {
+        return document.querySelector(selector);
+    },
+    
+    getElements: (selector) => {
+        return document.querySelectorAll(selector);
+    }
+};
+
+// Excel 導入功能
+function importExcel() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx, .xls';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                
+                if (jsonData.length < 2) {
+                    throw new Error('Excel 文件格式不正確');
+                }
+                
+                updateTableFromExcel(jsonData);
+            } catch (error) {
+                alert('導入 Excel 文件時發生錯誤：' + error.message);
+            }
+        };
+        
+        reader.onerror = function() {
+            alert('讀取文件時發生錯誤');
+        };
+        
+        reader.readAsArrayBuffer(file);
+    };
+    
+    input.click();
+}
+
+// 從 Excel 更新表格
+function updateTableFromExcel(jsonData) {
+    const table = utils.getElement('.main-table');
+    const rows = table.querySelectorAll('tr');
+    let startIdx = -1, endIdx = -1;
+    
+    rows.forEach((tr, i) => {
+        if (tr.querySelector('th')) startIdx = i;
+        if (tr.classList.contains('total-row')) endIdx = i;
+    });
+    
+    // 清除舊資料
+    for (let i = endIdx - 1; i > startIdx; i--) {
+        rows[i].remove();
+    }
+    
+    // 插入新資料
+    let rowCount = 1;
+    for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row.some(cell => cell !== undefined && cell !== null && cell !== '')) continue;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:center;">${rowCount}</td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[1]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[2]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[3]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[4]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" value="${row[5]||''}" oninput="updateAmount(this)"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input price-input" value="${row[6]||''}" oninput="updateAmount(this)"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+        `;
+        rows[endIdx].parentNode.insertBefore(tr, rows[endIdx]);
+        
+        // 觸發該行的計算
+        const qtyInput = tr.querySelector('.qty-input');
+        const priceInput = tr.querySelector('.price-input');
+        if (qtyInput && priceInput) {
+            updateAmount(qtyInput);
+        }
+        
+        rowCount++;
+    }
+    
+    // 更新所有計算
+    updateAllCalculations();
+}
+
+// Excel 導出功能
+function exportExcel() {
+    try {
+        const table = utils.getElement('.main-table');
+        const trs = table.querySelectorAll('tr');
+        const data = [];
+        
+        // 表頭
+        const ths = trs[2].querySelectorAll('th');
+        const header = Array.from(ths).map(th => th.innerText.replace(/\n.*/,''));
+        data.push(header);
+        
+        // 明細
+        for (let i = 3; i < trs.length; i++) {
+            if (trs[i].classList.contains('total-row')) break;
+            
+            const tds = trs[i].querySelectorAll('td');
+            if (tds.length < 8) continue;
+            
+            const row = [tds[0].innerText.trim()];
+            for (let j = 1; j < 8; j++) {
+                const input = tds[j].querySelector('input');
+                row.push(input ? input.value : tds[j].innerText.trim());
+            }
+            data.push(row);
+        }
+        
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Invoice");
+        XLSX.writeFile(wb, "invoice.xlsx");
+    } catch (error) {
+        alert('導出 Excel 文件時發生錯誤：' + error.message);
+    }
+}
+
+// 項次數量相關功能
+function showRowCountInput() {
+    const btn = utils.getElement('#rowCountBtn');
+    const input = utils.getElement('#rowCountInput');
+    input.value = '';
+    btn.style.display = 'none';
+    input.style.display = '';
+    input.focus();
+}
+
+function hideRowCountInput() {
+    const btn = utils.getElement('#rowCountBtn');
+    const input = utils.getElement('#rowCountInput');
+    const newCount = parseInt(input.value);
+    
+    if (!isNaN(newCount) && newCount > 0) {
+        changeRowCountValue(newCount);
+    }
+    
+    updateRowCountBtn();
+    input.style.display = 'none';
+    btn.style.display = '';
+}
+
+function updateRowCountBtn() {
+    const btn = utils.getElement('#rowCountBtn');
+    btn.textContent = '項次數量';
+}
+
+function changeRowCountValue(newCount) {
+    const mainTable = utils.getElement('.main-table');
+    const detailTables = mainTable.querySelectorAll('table');
+    let detailTable = null;
+    
+    for (let t of detailTables) {
+        if (t.querySelectorAll('th').length === 8) {
+            detailTable = t;
+            break;
+        }
+    }
+    
+    if (!detailTable) return;
+    
+    const trs = detailTable.querySelectorAll('tr');
+    let count = 0;
+    
+    for (let i = 1; i < trs.length; i++) {
+        if (trs[i].classList.contains('total-row')) break;
+        const tds = trs[i].querySelectorAll('td');
+        if (tds.length === 8) count++;
+    }
+    
+    if (newCount > count) {
+        const totalRow = detailTable.querySelector('.total-row');
+        for (let i = 1; i <= newCount - count; i++) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align:center;">${count + i}</td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" oninput="updateAmount(this)"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input price-input" oninput="updateAmount(this)"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+            `;
+            totalRow.parentNode.insertBefore(tr, totalRow);
+        }
+    } else if (newCount < count) {
+        for (let i = trs.length - 2; i >= 1 && count > newCount; i--) {
+            if (trs[i].classList.contains('total-row')) continue;
+            const tds = trs[i].querySelectorAll('td');
+            if (tds.length === 8) {
+                trs[i].remove();
+                count--;
+            }
+        }
+    }
+    
+    updateAllCalculations();
+}
+
+// 計算相關功能
+function updateAmount(input) {
+    const tr = input.closest('tr');
+    const qty = utils.parseNumber(tr.querySelector('.qty-input').value);
+    const price = utils.parseNumber(tr.querySelector('.price-input').value);
+    const amountInput = tr.querySelector('.amount-input');
+    
+    amountInput.value = utils.formatNumber(qty * price);
+    updateAllCalculations();
+}
+
+function updateTotalQuantity() {
+    let totalQty = 0;
+    utils.getElements('.qty-input').forEach(input => {
+        totalQty += utils.parseNumber(input.value);
+    });
+    
+    const totalQtyInput = utils.getElement('.total-row .total-input');
+    if (totalQtyInput) {
+        totalQtyInput.value = utils.formatNumber(totalQty, 0);
+    }
+}
+
+function updateTotalAmount() {
+    let total = 0;
+    utils.getElements('.amount-input').forEach(input => {
+        total += utils.parseNumber(input.value);
+    });
+    
+    const totalInput = utils.getElement('#totalAmountInput');
+    if (totalInput) {
+        totalInput.value = utils.formatNumber(total);
+    }
+}
+
+function updateAllCalculations() {
+    updateTotalAmount();
+    updateTotalQuantity();
+    updateRowCountBtn();
+}
+
+// 初始化
+window.onload = function() {
+    updateAllCalculations();
+    utils.getElements('.qty-input, .price-input').forEach(input => {
+        updateAmount(input);
+    });
+};
+</script>
+</html> 

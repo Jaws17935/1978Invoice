@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>裝箱單 PACKING LIST</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #fff;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, 'Microsoft JhengHei', sans-serif;
+            color: #222;
+        }
+        .table-container {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+        }
+        .title {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            padding: 32px 0 24px 0;
+        }
+        .main-table {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+            border: 2px solid #222;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-container .info-table,
+        .footer-table {
+            border: none;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-container .info-table td,
+        .main-table th,
+        .main-table td,
+        .footer-table td {
+            border: 1px solid #222;
+            box-sizing: border-box;
+        }
+        .table-container .info-table tr td:first-child {
+            border-right: 1px solid #222;
+        }
+        .table-container .info-table tr td:last-child {
+            border-left: 1px solid #222;
+        }
+        .info-header, .info-row {
+            padding: 4px 8px;
+            font-size: 1em;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+        .info-header {
+            text-align: left;
+            font-weight: bold;
+        }
+        .info-input {
+            width: 80%;
+            border: none;
+            outline: none;
+            font-size: 1em;
+            font-family: inherit;
+            background: transparent;
+            text-align: left;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tax-id-input {
+            width: 100px !important;
+            min-width: 100px !important;
+            max-width: 100px !important;
+        }
+        #packingList {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+            table-layout: fixed;
+        }
+        #packingList th, #packingList td {
+            border: 1px solid #222;
+            padding: 6px 4px;
+            font-size: 1em;
+            vertical-align: middle;
+            text-align: center;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #packingList th {
+            background: #fff;
+            color: #222;
+            font-weight: bold;
+            border-bottom: 2px solid #222;
+        }
+        .th-zh {
+            font-size: 0.95em;
+            font-weight: bold;
+            display: block;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        .total-row td {
+            font-weight: bold;
+            background: #fff;
+            color: #222;
+            border-top: 2px solid #222;
+        }
+        .total-row td:first-child {
+            text-align: left;
+        }
+        #totalCTN {
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0 4px;
+            border: 1px solid transparent;
+        }
+        #totalCTN:hover {
+            border-color: #ddd;
+            background: #f8f8f8;
+        }
+        #totalCTN:focus {
+            border-color: #bbb;
+            background: #fff;
+            outline: none;
+        }
+        #packingList input[type="text"], 
+        #packingList input[type="number"] {
+            text-align: center;
+            border: none;
+            outline: none;
+            font-size: 1em;
+            font-family: inherit;
+            background: transparent;
+            width: 100%;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.2s ease;
+        }
+        #packingList input[type="text"]:focus, 
+        #packingList input[type="number"]:focus {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        #packingList input[type="text"]:invalid, 
+        #packingList input[type="number"]:invalid {
+            background: rgba(255, 0, 0, 0.05);
+        }
+        .info-input:focus {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+            text-align: center;
+        }
+        .button-container {
+            width: 100%;
+            max-width: 297mm;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .excel-button {
+            padding: 8px 16px;
+            margin: 0 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+            background: #f8f8f8;
+            color: #333;
+            transition: all 0.2s ease;
+            min-width: 100px;
+        }
+        .excel-button:hover {
+            background: #e8e8e8;
+            border-color: #bbb;
+        }
+        @media print {
+            .button-container {
+                display: none !important;
+            }
+            .title {
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            table, th, td {
+                padding: 1px 2px !important;
+                line-height: 1 !important;
+            }
+            .info-header, .info-row {
+                padding: 1px 2px !important;
+                line-height: 1 !important;
+                white-space: nowrap !important;
+            }
+            .info-input {
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+            input, input[type='text'], input[type='number'] {
+                font-size: 9pt !important;
+                padding: 0 1px !important;
+                height: 1em !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body, table, th, td {
+                font-size: 9pt !important;
+            }
+            #packingList input[type="text"]:focus, 
+            #packingList input[type="number"]:focus,
+            .info-input:focus {
+                background: none !important;
+            }
+            #totalCTN {
+                border: none !important;
+                background: none !important;
+            }
+        }
+        /* 錯誤提示樣式 */
+        .error-message {
+            color: #ff0000;
+            font-size: 0.8em;
+            margin-top: 2px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">PACKING LIST</div>
+    <div class="table-container">
+        <table class="main-table">
+            <tr>
+                <td style="padding:0;border:none;">
+                    <table class="info-table" style="width:100%;table-layout:fixed;">
+                        <tr>
+                            <td class="info-header" style="width:50%;"><strong>出貨方</strong></td>
+                            <td class="info-row" style="width:50%;white-space:nowrap;"><strong>收件方</strong>
+                                <span style="float:right;font-weight:normal;white-space:nowrap;">統編&證號：<input type="text" class="info-input tax-id-input" value="" maxlength="10" onkeypress="handleTaxIdKeyPress(event)"></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司名稱：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">公司名稱：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司位址：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">公司位址：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">聯絡電話：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">聯絡電話：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司聯絡人：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">公司聯絡人：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding:0;border:none;">
+                    <table id="packingList">
+                        <tr>
+                            <th style="width:60px;">ITEM<br><span class="th-zh">(項次)</span></th>
+                            <th style="width:calc((100% - 350px) / 3);">DESCRIPTION<br><span class="th-zh">(品名)</span></th>
+                            <th style="width:calc((100% - 350px) / 3);">SPE<br><span class="th-zh">(規格)</span></th>
+                            <th style="width:calc((100% - 350px) / 3);">MODEL<br><span class="th-zh">(型號)</span></th>
+                            <th style="width:90px;">Q'TY(PCS)<br><span class="th-zh">(數量.單位)</span></th>
+                            <th style="width:90px;">N.W<br><span class="th-zh">(淨重KGS)</span></th>
+                            <th style="width:90px;">G.W<br><span class="th-zh">(毛重KGS)</span></th>
+                        </tr>
+                        <tbody id="itemList"></tbody>
+                        <tr class="total-row">
+                            <td colspan="4" style="text-align:left;">TOTAL CTN(總箱數)：<span id="totalCTN" contenteditable="true" onblur="updateRowCount(this.textContent)" onkeypress="handleTotalCTNKeyPress(event)">0</span></td>
+                            <td id="totalQTY">0</td>
+                            <td id="totalNW">0</td>
+                            <td id="totalGW">0</td>
+                        </tr>
+                    </table>
+                    <table style="width:100%;border-collapse:collapse;margin-top:0;border:none;">
+                        <tr>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;vertical-align:top;">
+                                生產地：<input type="text" id="origin" style="width:80%;min-width:120px;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:left;" value="">
+                            </td>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;vertical-align:top;">
+                                <div style="white-space:nowrap;">主/分提單號碼：<input type="text" id="subNo" style="width:80%;min-width:120px;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:left;display:inline-block;" value=""></div>
+                                <div style="margin-top:12px;">
+                                    <span style="font-weight:bold;">簽名：</span><span id="signature" style="font-family: 'Segoe Script', 'Microsoft JhengHei', cursive; font-size:1.2em;"></span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="button-container">
+        <button class="excel-button" onclick="importExcel()">資料導入</button>
+        <button class="excel-button" onclick="exportExcel()">資料導出</button>
+    </div>
+    <script>
+        let items = [];
+        let isInitialized = false;
+        let lastSavedData = null;
+
+        function validateNumber(value, min = 0) {
+            const num = parseFloat(value);
+            return !isNaN(num) && num >= min;
+        }
+
+        function validateInput(input, type = 'number', min = 0) {
+            const value = input.value.trim();
+            const errorElement = input.parentElement.querySelector('.error-message');
+            
+            if (!value) {
+                if (errorElement) {
+                    errorElement.textContent = '此欄位不能為空';
+                    errorElement.classList.add('show');
+                }
+                return false;
+            }
+
+            if (type === 'number' && !validateNumber(value, min)) {
+                if (errorElement) {
+                    errorElement.textContent = `請輸入有效的數字${min > 0 ? `（最小值：${min}）` : ''}`;
+                    errorElement.classList.add('show');
+                }
+                return false;
+            }
+
+            if (errorElement) {
+                errorElement.classList.remove('show');
+            }
+            return true;
+        }
+
+        function handleTaxIdKeyPress(event) {
+            if (!/^\d$/.test(event.key) && event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+                event.preventDefault();
+            }
+        }
+
+        function handleTotalCTNKeyPress(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                event.target.blur();
+            }
+        }
+
+        function handleTableKeyPress(event, currentInput, nextClass, isLastColumn = false) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const currentRow = currentInput.closest('tr');
+                let nextInput;
+                
+                if (isLastColumn) {
+                    const nextRow = currentRow.nextElementSibling;
+                    if (nextRow) {
+                        nextInput = nextRow.querySelector('.description');
+                    }
+                } else {
+                    nextInput = currentRow.querySelector('.' + nextClass);
+                }
+                
+                if (nextInput) {
+                    nextInput.focus();
+                    nextInput.select();
+                }
+            }
+        }
+
+        function updateRowCount(count) {
+            const numCount = parseInt(count);
+            if (!isNaN(numCount) && numCount > 0) {
+                if (numCount > 100) {
+                    alert('行數不能超過100行');
+                    const currentRows = document.querySelectorAll('#itemList tr').length;
+                    document.getElementById('totalCTN').textContent = currentRows;
+                    return;
+                }
+                addDefaultRows(numCount);
+            } else {
+                const currentRows = document.querySelectorAll('#itemList tr').length;
+                document.getElementById('totalCTN').textContent = currentRows;
+            }
+        }
+
+        function updateItemData(index, field, value) {
+            if (items[index]) {
+                items[index][field] = value;
+                saveToLocalStorage();
+            }
+        }
+
+        function calculateTotals() {
+            let totalNW = 0, totalGW = 0, totalQTY = 0;
+            const rows = document.querySelectorAll('#itemList tr');
+            document.getElementById('totalCTN').textContent = rows.length;
+            
+            rows.forEach(row => {
+                const qty = parseInt(row.querySelector('.quantity').value) || 0;
+                const nw = parseFloat(row.querySelector('.nw').value) || 0;
+                const gw = parseFloat(row.querySelector('.gw').value) || 0;
+                
+                if (validateNumber(qty, 0) && validateNumber(nw, 0) && validateNumber(gw, 0)) {
+                    totalQTY += qty;
+                    totalNW += nw;
+                    totalGW += gw;
+                }
+            });
+            
+            document.getElementById('totalQTY').textContent = totalQTY;
+            document.getElementById('totalNW').textContent = totalNW.toFixed(2);
+            document.getElementById('totalGW').textContent = totalGW.toFixed(2);
+        }
+
+        function addNewRow(item = null) {
+            const tbody = document.getElementById('itemList');
+            const row = document.createElement('tr');
+            const index = items.length + 1;
+            
+            const fragment = document.createDocumentFragment();
+            row.innerHTML = `
+                <td style="padding:0;width:60px;">
+                    <input type="text" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${index}" readonly>
+                </td>
+                <td style="padding:0;width:calc((100% - 350px) / 3);">
+                    <input type="text" class="description" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${item?.description || ''}" onchange="updateItemData(${index-1}, 'description', this.value)" onkeypress="handleTableKeyPress(event, this, 'spec')">
+                    <div class="error-message"></div>
+                </td>
+                <td style="padding:0;width:calc((100% - 350px) / 3);">
+                    <input type="text" class="spec" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${item?.spec || ''}" onchange="updateItemData(${index-1}, 'spec', this.value)" onkeypress="handleTableKeyPress(event, this, 'model')">
+                    <div class="error-message"></div>
+                </td>
+                <td style="padding:0;width:calc((100% - 350px) / 3);">
+                    <input type="text" class="model" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${item?.model || ''}" onchange="updateItemData(${index-1}, 'model', this.value)" onkeypress="handleTableKeyPress(event, this, 'quantity')">
+                    <div class="error-message"></div>
+                </td>
+                <td style="padding:0;width:90px;">
+                    <input type="number" class="quantity" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${item?.quantity || ''}" onchange="validateInput(this, 'number', 0); updateItemData(${index-1}, 'quantity', this.value); calculateTotals()" onkeypress="handleTableKeyPress(event, this, 'nw')">
+                    <div class="error-message"></div>
+                </td>
+                <td style="padding:0;width:90px;">
+                    <input type="number" class="nw" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${item?.nw || ''}" onchange="validateInput(this, 'number', 0); updateItemData(${index-1}, 'nw', this.value); calculateTotals()" onkeypress="handleTableKeyPress(event, this, 'gw')">
+                    <div class="error-message"></div>
+                </td>
+                <td style="padding:0;width:90px;">
+                    <input type="number" class="gw" style="width:100%;border:none;outline:none;font-size:1em;font-family:inherit;background:transparent;text-align:center;" value="${item?.gw || ''}" onchange="validateInput(this, 'number', 0); updateItemData(${index-1}, 'gw', this.value); calculateTotals()" onkeypress="handleTableKeyPress(event, this, 'description', true)">
+                    <div class="error-message"></div>
+                </td>
+            `;
+            fragment.appendChild(row);
+            tbody.appendChild(fragment);
+            
+            items.push({
+                description: item?.description || '',
+                spec: item?.spec || '',
+                model: item?.model || '',
+                quantity: item?.quantity || '',
+                nw: item?.nw || '',
+                gw: item?.gw || ''
+            });
+            calculateTotals();
+            saveToLocalStorage();
+        }
+
+        function addDefaultRows(count) {
+            document.getElementById('itemList').innerHTML = '';
+            items = [];
+            for (let i = 0; i < count; i++) {
+                addNewRow({
+                    description: '',
+                    spec: '',
+                    model: '',
+                    quantity: '',
+                    nw: '',
+                    gw: ''
+                });
+            }
+            isInitialized = true;
+        }
+
+        function saveToLocalStorage() {
+            const data = {
+                items: items,
+                totalCTN: document.getElementById('totalCTN').textContent,
+                totalQTY: document.getElementById('totalQTY').textContent,
+                totalNW: document.getElementById('totalNW').textContent,
+                totalGW: document.getElementById('totalGW').textContent,
+                timestamp: new Date().getTime()
+            };
+            localStorage.setItem('packingListData', JSON.stringify(data));
+            lastSavedData = data;
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('packingListData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    if (data.items && Array.isArray(data.items)) {
+                        document.getElementById('itemList').innerHTML = '';
+                        items = [];
+                        data.items.forEach(item => addNewRow(item));
+                        
+                        if (data.totalCTN) document.getElementById('totalCTN').textContent = data.totalCTN;
+                        if (data.totalQTY) document.getElementById('totalQTY').textContent = data.totalQTY;
+                        if (data.totalNW) document.getElementById('totalNW').textContent = data.totalNW;
+                        if (data.totalGW) document.getElementById('totalGW').textContent = data.totalGW;
+                        
+                        lastSavedData = data;
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error loading saved data:', e);
+                }
+            }
+            return false;
+        }
+
+        function importExcel() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx, .xls';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                        
+                        if (jsonData.length < 2) {
+                            alert('Excel 文件格式不正確');
+                            return;
+                        }
+
+                        document.getElementById('itemList').innerHTML = '';
+                        items = [];
+                        
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (row.length >= 7) {
+                                addNewRow({
+                                    description: row[1] || '',
+                                    spec: row[2] || '',
+                                    model: row[3] || '',
+                                    quantity: row[4] || '',
+                                    nw: row[5] || '',
+                                    gw: row[6] || ''
+                                });
+                            }
+                        }
+                        
+                        calculateTotals();
+                        saveToLocalStorage();
+                    } catch (error) {
+                        alert('導入 Excel 文件時發生錯誤：' + error.message);
+                    }
+                };
+                
+                reader.onerror = function() {
+                    alert('讀取文件時發生錯誤');
+                };
+                
+                reader.readAsArrayBuffer(file);
+            };
+            
+            input.click();
+        }
+
+        function exportExcel() {
+            try {
+                const data = [
+                    ['ITEM', 'DESCRIPTION', 'SPE', 'MODEL', 'Q\'TY(PCS)', 'N.W', 'G.W']
+                ];
+                
+                items.forEach((item, index) => {
+                    data.push([
+                        index + 1,
+                        item.description,
+                        item.spec,
+                        item.model,
+                        item.quantity,
+                        item.nw,
+                        item.gw
+                    ]);
+                });
+                
+                data.push([
+                    'TOTAL',
+                    '',
+                    '',
+                    '',
+                    document.getElementById('totalQTY').textContent,
+                    document.getElementById('totalNW').textContent,
+                    document.getElementById('totalGW').textContent
+                ]);
+                
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                
+                const wscols = [
+                    {wch: 8},  // ITEM
+                    {wch: 30}, // DESCRIPTION
+                    {wch: 20}, // SPE
+                    {wch: 20}, // MODEL
+                    {wch: 12}, // Q'TY
+                    {wch: 12}, // N.W
+                    {wch: 12}  // G.W
+                ];
+                ws['!cols'] = wscols;
+                
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Packing List");
+                
+                XLSX.writeFile(wb, "packing_list.xlsx");
+            } catch (error) {
+                alert('導出 Excel 文件時發生錯誤：' + error.message);
+            }
+        }
+
+        window.onload = function() {
+            if (!loadFromLocalStorage()) {
+                addDefaultRows(30);
+            }
+        };
+
+        setInterval(saveToLocalStorage, 30000);
+
+        window.addEventListener('beforeunload', function(e) {
+            if (JSON.stringify(lastSavedData) !== JSON.stringify({
+                items: items,
+                totalCTN: document.getElementById('totalCTN').textContent,
+                totalQTY: document.getElementById('totalQTY').textContent,
+                totalNW: document.getElementById('totalNW').textContent,
+                totalGW: document.getElementById('totalGW').textContent,
+                timestamp: new Date().getTime()
+            })) {
+                saveToLocalStorage();
+            }
+        });
+    </script>
+</body>
+</html> 
