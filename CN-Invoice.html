@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INVOICE</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #fff;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Arial, 'Microsoft YaHei', sans-serif;
+            color: #222;
+        }
+        .table-container {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+        }
+        .title {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            padding: 32px 0 24px 0;
+        }
+        .main-table {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+            border: 2px solid #222;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .info-table td, .main-table th, .main-table td {
+            border: 1px solid #222;
+            box-sizing: border-box;
+            padding: 4px 8px;
+            font-size: 1em;
+            vertical-align: middle;
+        }
+        .info-header {
+            text-align: left;
+            font-weight: bold;
+            background: #f8f8f8;
+        }
+        .info-row {
+            background: #fff;
+        }
+        .th-zh {
+            font-size: 0.95em;
+            font-weight: bold;
+            display: block;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        .total-row td {
+            font-weight: bold;
+            background: #fff;
+            color: #222;
+            border-top: 2px solid #222;
+        }
+        .total-row td:first-child {
+            text-align: left;
+        }
+        @media print {
+            .title {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            table, th, td {
+                padding: 1px 2px !important;
+                line-height: 1 !important;
+            }
+            body, table, th, td {
+                font-size: 9pt !important;
+            }
+        }
+        .info-input {
+            min-width: 60px;
+            max-width: 300px;
+            width: auto;
+            border: none !important;
+            outline: none;
+            font-size: 1em;
+            font-family: inherit;
+            background: transparent;
+            text-align: left;
+            box-sizing: border-box;
+            white-space: nowrap;
+            overflow: hidden;
+            resize: none;
+            padding: 2px 4px;
+        }
+        .info-input:focus {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        .tax-id-input {
+            min-width: 80px !important;
+            max-width: 120px !important;
+        }
+        .total-input {
+            min-width: 60px;
+            max-width: 150px;
+            width: auto;
+            display: inline-block;
+        }
+        .center-input {
+            text-align: center;
+            min-width: 50px;
+            max-width: 200px;
+        }
+
+        /* 特殊欄位的最小寬度設置 */
+        .date-input {
+            min-width: 120px !important;
+            max-width: 120px !important;
+        }
+        .order-input {
+            min-width: 100px;
+            max-width: 180px;
+        }
+        /* textarea 特殊樣式 */
+        .info-textarea {
+            min-width: 200px;
+            max-width: 400px;
+            min-height: 20px;
+            height: auto;
+            width: auto;
+            border: none !important;
+            outline: none;
+            font-size: 1em;
+            font-family: inherit;
+            background: transparent;
+            text-align: left;
+            box-sizing: border-box;
+            resize: none;
+            padding: 2px 4px;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            vertical-align: top;
+        }
+        .info-textarea:focus {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .excel-button {
+            padding: 8px 16px;
+            margin: 0 4px;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 1em;
+            color: #222;
+            transition: background-color 0.2s;
+        }
+        .excel-button:hover {
+            background: #e0e0e0;
+        }
+        .excel-button:active {
+            background: #d0d0d0;
+        }
+        @media print {
+            .excel-button {
+                display: none !important;
+            }
+            .info-input {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="title">INVOICE</div>
+    
+    <!-- 簡化的發票號碼顯示 -->
+    <div style="width: 100%; max-width: 297mm; margin: 0 auto; text-align: right; padding: 0 20px 10px 0; font-size: 1.1em; font-weight: bold;">
+        <span id="invoiceNumber">No. JL250630GG</span>
+    </div>
+    
+    <div class="table-container">
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; background: #f8f8f8;">
+            <tr>
+                <td style="padding: 8px; text-align: left; border: 1px solid #222; white-space: nowrap; width: 50%;">
+                    <strong>开票日期 (Issue Date)：</strong>
+                    <input type="date" class="info-input issue-date date-input" style="margin-left: 8px;">
+                </td>
+                <td style="padding: 8px; text-align: left; border: 1px solid #222; white-space: nowrap; width: 50%;">
+                    <strong>订单号码 (Order No.)：</strong>
+                    <input type="text" class="info-input order-input" style="margin-left: 8px;" placeholder="输入订单号码">
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <div class="table-container">
+        <table class="main-table">
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table class="info-table" style="width:100%;table-layout:fixed;">
+                        <tr>
+                            <td class="info-header" style="width:50%;"><strong>出货方</strong></td>
+                            <td class="info-header" style="width:50%;"><strong>收件方</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司名称：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">申报人：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司地址：<input type="text" class="info-input"></td>
+                            <td class="info-row">申报地址：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司电话：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">联络电话：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row">公司联络人：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row">申報單位：<input type="text" class="info-input" value=""></td>
+                        </tr>
+                        <tr>
+                            <td class="info-row"></td>
+                            <td class="info-row">统编 & 证号：<input type="text" class="info-input tax-id-input" value=""></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table class="info-table" style="width:100%;table-layout:fixed;">
+                        <tr>
+                            <td class="info-row" style="white-space:nowrap; width:150px;">贸易条件：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row" style="white-space:nowrap; width:150px;">交易币别：<input type="text" class="info-input" value=""></td>
+                            <td class="info-row" style="white-space:nowrap; width:150px;">运费：<input type="text" class="info-input"></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <tr>
+                            <th style="width:40px; text-align:center;">ITEM<br><span class="th-zh">(项次)</span></th>
+                            <th style="width:120px; text-align:center;">DESCRIPTION<br><span class="th-zh">(品名)</span></th>
+                            <th style="width:80px; text-align:center;">SPE<br><span class="th-zh">(规格)</span></th>
+                            <th style="width:80px; text-align:center;">MODEL<br><span class="th-zh">(型号)</span></th>
+                            <th style="width:120px; text-align:center;">Material<br><span class="th-zh">(材质)</span></th>
+                            <th style="width:60px; text-align:center;">Q'TY(PCS)<br><span class="th-zh">(数量.单位)</span></th>
+                            <th style="width:60px; text-align:center;">Unit Price<br><span class="th-zh">(单价)</span></th>
+                            <th style="width:80px; text-align:center;">Total Amount<br><span class="th-zh">(项次金额)</span></th>
+                        </tr>
+                        <tr>
+                            <td style="text-align:center;">1</td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input price-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+                        </tr>
+                        <tr>
+                            <td style="text-align:center;">2</td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input price-input" oninput="updateAmount(this)"></td>
+                            <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align:left;white-space:nowrap;">品牌：<input type="text" class="info-input" value=""></td>
+                            <td colspan="2" style="text-align:left;white-space:nowrap;">总数量(PCE)：<input type="text" class="info-input total-input" value=""></td>
+                            <td colspan="3" style="text-align:left;white-space:nowrap;">TOTAL(总金额)：<input type="text" class="info-input total-input" id="totalAmountInput" readonly></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding:0;border:none;">
+                    <table style="width:100%;border-collapse:collapse;margin-top:0;border:none;">
+                        <tr>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;vertical-align:top;white-space:nowrap;">
+                                产地：<input type="text" class="info-input" value="">
+                            </td>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;vertical-align:top;white-space:nowrap;">
+                                分提单号码：<input type="text" class="info-input">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="border:1px solid #222;padding:6px 8px;text-align:left;vertical-align:top;">
+                                <strong>交付条款：</strong>
+                                <textarea class="info-textarea" style="margin-left: 8px;" placeholder="输入交付条款" rows="1"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;"></td>
+                            <td style="border:1px solid #222;padding:6px 8px;text-align:left;width:50%;white-space:nowrap;height:48px;min-height:48px;">
+                                <span style="font-weight:bold;">签名：</span>
+                                <input type="text" class="info-input">
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="button-container" style="width:100%;max-width:297mm;margin:20px auto;text-align:center;">
+        <button class="excel-button" onclick="importExcel()">资料导入</button>
+        <button id="rowCountBtn" class="excel-button" style="margin:0 8px;" onclick="showRowCountInput()">项次数量</button>
+        <input id="rowCountInput" type="number" min="1" style="width:100px !important;display:none;margin:0 8px;vertical-align:middle;text-align:center;" placeholder="项次数量" onblur="hideRowCountInput()" onkeydown="if(event.key==='Enter'){hideRowCountInput();}">
+        <button class="excel-button" onclick="exportExcel()">资料导出</button>
+    </div>
+</body>
+<script>
+// 全域变量
+const CONFIG = {
+    DECIMAL_PLACES: 2,
+    DEFAULT_ROW_COUNT: 2,
+    TABLE_COLUMN_COUNT: 8, // 明細表的欄位數量
+    HEADER_ROW_INDEX: 2, // 表頭所在的行索引
+    EXPORT_COLUMN_COUNT: 7 // 導出時的欄位數量（不含 Total Amount）
+};
+
+// 月份英文简码对应表
+const MONTH_CODES = {
+    1: 'JA',  // January
+    2: 'FE',  // February  
+    3: 'MR',  // March
+    4: 'AP',  // April
+    5: 'MY',  // May
+    6: 'JN',  // June
+    7: 'JL',  // July
+    8: 'AU',  // August
+    9: 'SP',  // September
+    10: 'OC', // October
+    11: 'NV', // November
+    12: 'DC'  // December
+};
+
+// 工具函数
+const utils = {
+    parseNumber: (value) => {
+        const num = parseFloat(value);
+        return isNaN(num) ? 0 : num;
+    },
+    
+    formatNumber: (value, decimals = CONFIG.DECIMAL_PLACES) => {
+        return value ? value.toFixed(decimals) : '';
+    },
+    
+    getElement: (selector) => {
+        return document.querySelector(selector);
+    },
+    
+    getElements: (selector) => {
+        return document.querySelectorAll(selector);
+    },
+    
+    // 自動調整輸入框寬度
+    autoResizeInput: (input) => {
+        if (!input) return;
+        
+        // 處理 textarea 的特殊情況
+        if (input.tagName.toLowerCase() === 'textarea') {
+            // 自動調整高度
+            input.style.height = 'auto';
+            input.style.height = input.scrollHeight + 'px';
+            
+            // 自動調整寬度
+            const measure = document.createElement('span');
+            measure.style.visibility = 'hidden';
+            measure.style.position = 'absolute';
+            measure.style.whiteSpace = 'nowrap';
+            measure.style.fontSize = window.getComputedStyle(input).fontSize;
+            measure.style.fontFamily = window.getComputedStyle(input).fontFamily;
+            measure.style.fontWeight = window.getComputedStyle(input).fontWeight;
+            measure.style.padding = '0 4px';
+            
+            // 獲取最長的一行來計算寬度
+            const lines = (input.value || input.placeholder || 'W').split('\n');
+            const longestLine = lines.reduce((a, b) => a.length > b.length ? a : b);
+            measure.textContent = longestLine;
+            
+            document.body.appendChild(measure);
+            const measuredWidth = measure.offsetWidth;
+            document.body.removeChild(measure);
+            
+            const computedStyle = window.getComputedStyle(input);
+            const minWidth = parseInt(computedStyle.minWidth) || 200;
+            const maxWidth = parseInt(computedStyle.maxWidth) || 400;
+            
+            const newWidth = Math.max(minWidth, Math.min(maxWidth, measuredWidth + 20));
+            input.style.width = newWidth + 'px';
+            return;
+        }
+        
+        // 原本的 input 處理邏輯
+        const measure = document.createElement('span');
+        measure.style.visibility = 'hidden';
+        measure.style.position = 'absolute';
+        measure.style.whiteSpace = 'nowrap';
+        measure.style.fontSize = window.getComputedStyle(input).fontSize;
+        measure.style.fontFamily = window.getComputedStyle(input).fontFamily;
+        measure.style.fontWeight = window.getComputedStyle(input).fontWeight;
+        measure.style.padding = '0 4px';
+        
+        // 設置文本內容，如果為空則使用placeholder或最小寬度
+        const text = input.value || input.placeholder || 'W';
+        measure.textContent = text;
+        
+        document.body.appendChild(measure);
+        
+        // 獲取測量寬度
+        const measuredWidth = measure.offsetWidth;
+        document.body.removeChild(measure);
+        
+        // 設置新寬度，考慮最小和最大寬度限制
+        const computedStyle = window.getComputedStyle(input);
+        const minWidth = parseInt(computedStyle.minWidth) || 20;
+        const maxWidth = parseInt(computedStyle.maxWidth) || 300;
+        
+        const newWidth = Math.max(minWidth, Math.min(maxWidth, measuredWidth + 10));
+        input.style.width = newWidth + 'px';
+    },
+    
+    // 為所有輸入框添加自動調整功能
+    setupAutoResize: () => {
+        const inputs = document.querySelectorAll('.info-input, .info-textarea');
+        inputs.forEach(input => {
+            // 避免重複綁定事件監聽器
+            if (input.dataset.autoResizeSetup === 'true') return;
+            
+            // 初始調整
+            utils.autoResizeInput(input);
+            
+            // 監聽輸入事件
+            input.addEventListener('input', () => {
+                utils.autoResizeInput(input);
+            });
+            
+            // 監聽焦點事件
+            input.addEventListener('focus', () => {
+                utils.autoResizeInput(input);
+            });
+            
+            // 監聽失焦事件
+            input.addEventListener('blur', () => {
+                utils.autoResizeInput(input);
+            });
+            
+            // 標記已設置，避免重複綁定
+            input.dataset.autoResizeSetup = 'true';
+        });
+    },
+    
+    // 為單個輸入框設置自動調整功能（用於動態創建的元素）
+    setupAutoResizeForInput: (input) => {
+        if (!input || input.dataset.autoResizeSetup === 'true') return;
+        
+        utils.autoResizeInput(input);
+        
+        input.addEventListener('input', () => {
+            utils.autoResizeInput(input);
+        });
+        
+        input.addEventListener('focus', () => {
+            utils.autoResizeInput(input);
+        });
+        
+        input.addEventListener('blur', () => {
+            utils.autoResizeInput(input);
+        });
+        
+        input.dataset.autoResizeSetup = 'true';
+    }
+};
+
+// 发票号码生成功能
+function generateRandomLetters(length = 2) {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    return result;
+}
+
+function padZero(num) {
+    return num.toString().padStart(2, '0');
+}
+
+function generateInvoiceNumber() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // getMonth() 返回 0-11
+    const day = now.getDate();
+    
+    // 构建发票号码
+    // 月份两个英文字简码
+    const monthCode = MONTH_CODES[month];
+    
+    // 年后两码
+    const yearCode = year.toString().slice(-2);
+    
+    // 月(如果为单数则要加上0)
+    const monthStr = padZero(month);
+    
+    // 日(格式比照月办理)
+    const dayStr = padZero(day);
+    
+    // 乱数英文两码
+    const randomCode = generateRandomLetters(2);
+    
+    // 组合发票号码
+    const invoiceNumber = `${monthCode}${yearCode}${monthStr}${dayStr}${randomCode}`;
+    
+    // 更新显示为简单格式
+    const invoiceNumberElement = document.getElementById('invoiceNumber');
+    if (invoiceNumberElement) {
+        invoiceNumberElement.textContent = `No. ${invoiceNumber}`;
+    }
+    
+    return invoiceNumber;
+}
+
+
+
+// Excel 导入功能
+function importExcel() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx, .xls';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                
+                if (jsonData.length < 2) {
+                    throw new Error('Excel 文件格式不正确');
+                }
+                
+                updateTableFromExcel(jsonData);
+            } catch (error) {
+                alert('导入 Excel 文件时发生错误：' + error.message);
+            }
+        };
+        
+        reader.onerror = function() {
+            alert('读取文件时发生错误');
+        };
+        
+        reader.readAsArrayBuffer(file);
+    };
+    
+    input.click();
+}
+
+// 从 Excel 更新表格
+function updateTableFromExcel(jsonData) {
+    const table = utils.getElement('.main-table');
+    const rows = table.querySelectorAll('tr');
+    let startIdx = -1, endIdx = -1;
+    
+    rows.forEach((tr, i) => {
+        if (tr.querySelector('th')) startIdx = i;
+        if (tr.classList.contains('total-row')) endIdx = i;
+    });
+    
+    // 清除旧资料
+    for (let i = endIdx - 1; i > startIdx; i--) {
+        rows[i].remove();
+    }
+    
+    // 插入新资料
+    let rowCount = 1;
+    for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row.some(cell => cell !== undefined && cell !== null && cell !== '')) continue;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:center;">${rowCount}</td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[1]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[2]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[3]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input" value="${row[4]||''}"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" value="${row[5]||''}" oninput="updateAmount(this)"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input price-input" value="${row[6]||''}" oninput="updateAmount(this)"></td>
+            <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+        `;
+        rows[endIdx].parentNode.insertBefore(tr, rows[endIdx]);
+        
+        // 触发该行的计算
+        const qtyInput = tr.querySelector('.qty-input');
+        const priceInput = tr.querySelector('.price-input');
+        if (qtyInput && priceInput) {
+            updateAmount(qtyInput);
+        }
+        
+        // 為新創建的輸入框添加自動調整功能
+        const newInputs = tr.querySelectorAll('.info-input');
+        newInputs.forEach(input => {
+            utils.setupAutoResizeForInput(input);
+        });
+        
+        rowCount++;
+    }
+    
+    // 更新所有计算
+    updateAllCalculations();
+}
+
+// Excel 导出功能
+function exportExcel() {
+    try {
+        const table = utils.getElement('.main-table');
+        const data = [];
+        
+        // 找到包含表頭的明細表格
+        const detailTables = table.querySelectorAll('table');
+        let detailTable = null;
+        
+        for (let t of detailTables) {
+            if (t.querySelectorAll('th').length === CONFIG.TABLE_COLUMN_COUNT) {
+                detailTable = t;
+                break;
+            }
+        }
+        
+        if (detailTable) {
+            // 處理表頭 - 正確解析英文和中文格式
+            const allRows = detailTable.querySelectorAll('tr');
+            let headerRow = null;
+            for (let row of allRows) {
+                if (row.querySelector('th')) {
+                    headerRow = row;
+                    break;
+                }
+            }
+            
+            if (headerRow) {
+                const ths = headerRow.querySelectorAll('th');
+                // 只取前面欄位（排除 Total Amount）
+                const header = Array.from(ths).slice(0, CONFIG.EXPORT_COLUMN_COUNT).map(th => {
+                    // 獲取英文部分（第一個文本節點）
+                    const englishText = th.childNodes[0]?.textContent?.trim() || '';
+                    // 獲取中文部分（span.th-zh的內容）
+                    const chineseSpan = th.querySelector('.th-zh');
+                    const chineseText = chineseSpan ? chineseSpan.textContent.trim() : '';
+                    
+                    // 組合格式：英文\n中文
+                    return englishText + '\n' + chineseText;
+                });
+                data.push(header);
+            }
+            
+            // 處理資料行
+            const detailRows = detailTable.querySelectorAll('tr');
+            for (let i = 1; i < detailRows.length; i++) {
+                const tr = detailRows[i];
+                if (tr.classList.contains('total-row')) break;
+                
+                const tds = tr.querySelectorAll('td');
+                if (tds.length < CONFIG.TABLE_COLUMN_COUNT) continue;
+                
+                const row = [];
+                // 只取前面欄位（排除 Total Amount）
+                for (let j = 0; j < CONFIG.EXPORT_COLUMN_COUNT; j++) {
+                    if (j === 0) {
+                        // 第一欄是項次編號
+                        row.push(tds[j].innerText.trim());
+                    } else {
+                        // 其他欄位從input取值
+                        const input = tds[j].querySelector('input');
+                        row.push(input ? input.value : tds[j].innerText.trim());
+                    }
+                }
+                data.push(row);
+            }
+        }
+        
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        
+        // 設置儲存格樣式，支援換行文字
+        if (!ws['!cols']) ws['!cols'] = [];
+        // 設置每個欄位的適當寬度（不包含 Total Amount）
+        ws['!cols'][0] = { wch: 10 };  // ITEM (项次)
+        ws['!cols'][1] = { wch: 20 };  // DESCRIPTION (品名)
+        ws['!cols'][2] = { wch: 15 };  // SPE (规格)
+        ws['!cols'][3] = { wch: 15 };  // MODEL (型号)
+        ws['!cols'][4] = { wch: 20 };  // Material (材质)
+        ws['!cols'][5] = { wch: 15 };  // Q'TY(PCS) (数量.单位)
+        ws['!cols'][6] = { wch: 12 };  // Unit Price (单价)
+        
+        // 設置表頭樣式（第一行）
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        // 只處理導出的欄位
+        const maxCol = Math.min(range.e.c, CONFIG.EXPORT_COLUMN_COUNT - 1);
+        for (let C = range.s.c; C <= maxCol; ++C) {
+            const address = XLSX.utils.encode_cell({ r: 0, c: C });
+            if (!ws[address]) continue;
+            if (!ws[address].s) ws[address].s = {};
+            ws[address].s.alignment = { 
+                wrapText: true,  // 啟用文字換行
+                vertical: 'center',
+                horizontal: 'center'
+            };
+        }
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Invoice");
+        
+        // 獲取當前發票號碼
+        const invoiceNumberElement = document.getElementById('invoiceNumber');
+        let invoiceNumber = 'INVOICE';
+        if (invoiceNumberElement) {
+            // 從 "No. JL250701NU" 格式中提取發票號碼
+            const text = invoiceNumberElement.textContent;
+            const match = text.match(/No\.\s*(.+)/);
+            if (match && match[1]) {
+                invoiceNumber = `INVOICE - ${match[1].trim()}`;
+            }
+        }
+        
+        // 使用發票號碼作為檔案名稱
+        XLSX.writeFile(wb, `${invoiceNumber}.xlsx`);
+    } catch (error) {
+        alert('导出 Excel 文件时发生错误：' + error.message);
+    }
+}
+
+// 项次数量相关功能
+function showRowCountInput() {
+    const btn = utils.getElement('#rowCountBtn');
+    const input = utils.getElement('#rowCountInput');
+    input.value = '';
+    btn.style.display = 'none';
+    input.style.display = '';
+    input.focus();
+}
+
+function hideRowCountInput() {
+    const btn = utils.getElement('#rowCountBtn');
+    const input = utils.getElement('#rowCountInput');
+    const newCount = parseInt(input.value);
+    
+    if (!isNaN(newCount) && newCount > 0) {
+        changeRowCountValue(newCount);
+    }
+    
+    updateRowCountBtn();
+    input.style.display = 'none';
+    btn.style.display = '';
+}
+
+function updateRowCountBtn() {
+    const btn = utils.getElement('#rowCountBtn');
+    
+    // 計算當前項次數量
+    const mainTable = utils.getElement('.main-table');
+    if (!mainTable) return;
+    
+    const detailTables = mainTable.querySelectorAll('table');
+    let detailTable = null;
+    
+    for (let t of detailTables) {
+        if (t.querySelectorAll('th').length === CONFIG.TABLE_COLUMN_COUNT) {
+            detailTable = t;
+            break;
+        }
+    }
+    
+    if (!detailTable) return;
+    
+    const trs = detailTable.querySelectorAll('tr');
+    let count = 0;
+    
+    for (let i = 1; i < trs.length; i++) {
+        if (trs[i].classList.contains('total-row')) break;
+        const tds = trs[i].querySelectorAll('td');
+        if (tds.length === CONFIG.TABLE_COLUMN_COUNT) count++;
+    }
+    
+    btn.textContent = `项次数量`;
+}
+
+function changeRowCountValue(newCount) {
+    const mainTable = utils.getElement('.main-table');
+    const detailTables = mainTable.querySelectorAll('table');
+    let detailTable = null;
+    
+    for (let t of detailTables) {
+        if (t.querySelectorAll('th').length === CONFIG.TABLE_COLUMN_COUNT) {
+            detailTable = t;
+            break;
+        }
+    }
+    
+    if (!detailTable) return;
+    
+    const trs = detailTable.querySelectorAll('tr');
+    let count = 0;
+    
+    for (let i = 1; i < trs.length; i++) {
+        if (trs[i].classList.contains('total-row')) break;
+        const tds = trs[i].querySelectorAll('td');
+        if (tds.length === CONFIG.TABLE_COLUMN_COUNT) count++;
+    }
+    
+    if (newCount > count) {
+        const totalRow = detailTable.querySelector('.total-row');
+        for (let i = 1; i <= newCount - count; i++) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align:center;">${count + i}</td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input qty-input" oninput="updateAmount(this)"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input price-input" oninput="updateAmount(this)"></td>
+                <td style="text-align:center;"><input type="text" class="info-input center-input amount-input" readonly></td>
+            `;
+            totalRow.parentNode.insertBefore(tr, totalRow);
+            
+            // 為新創建的輸入框添加自動調整功能
+            const newInputs = tr.querySelectorAll('.info-input');
+            newInputs.forEach(input => {
+                utils.setupAutoResizeForInput(input);
+            });
+        }
+    } else if (newCount < count) {
+        for (let i = trs.length - 2; i >= 1 && count > newCount; i--) {
+            if (trs[i].classList.contains('total-row')) continue;
+            const tds = trs[i].querySelectorAll('td');
+            if (tds.length === CONFIG.TABLE_COLUMN_COUNT) {
+                trs[i].remove();
+                count--;
+            }
+        }
+    }
+    
+    updateAllCalculations();
+}
+
+// 计算相关功能
+function updateAmount(input) {
+    const tr = input.closest('tr');
+    const qty = utils.parseNumber(tr.querySelector('.qty-input').value);
+    const price = utils.parseNumber(tr.querySelector('.price-input').value);
+    const amountInput = tr.querySelector('.amount-input');
+    
+    amountInput.value = utils.formatNumber(qty * price);
+    updateAllCalculations();
+}
+
+function updateTotalQuantity() {
+    let totalQty = 0;
+    utils.getElements('.qty-input').forEach(input => {
+        totalQty += utils.parseNumber(input.value);
+    });
+    
+    const totalQtyInput = utils.getElement('.total-row .total-input');
+    if (totalQtyInput) {
+        totalQtyInput.value = utils.formatNumber(totalQty, 0);
+    }
+}
+
+function updateTotalAmount() {
+    let total = 0;
+    utils.getElements('.amount-input').forEach(input => {
+        total += utils.parseNumber(input.value);
+    });
+    
+    const totalInput = utils.getElement('#totalAmountInput');
+    if (totalInput) {
+        totalInput.value = utils.formatNumber(total);
+    }
+}
+
+function updateAllCalculations() {
+    updateTotalAmount();
+    updateTotalQuantity();
+    updateRowCountBtn();
+}
+
+// 初始化
+window.onload = function() {
+    // 设定今天日期
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.querySelector('.issue-date');
+    if (dateInput) {
+        dateInput.value = today;
+    }
+    
+    // 自动生成发票号码
+    generateInvoiceNumber();
+    
+    updateAllCalculations();
+    utils.getElements('.qty-input, .price-input').forEach(input => {
+        updateAmount(input);
+    });
+    
+    // 為所有輸入框添加自動調整功能
+    utils.setupAutoResize();
+};
+</script>
+</html> 
